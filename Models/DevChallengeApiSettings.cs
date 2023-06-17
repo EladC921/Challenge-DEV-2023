@@ -13,13 +13,17 @@ namespace Challenge_DEV_2023.Models
 
         public string ApiUrl
         {
-            get => BaseUrl + Token;
+            get => _apiUrl;
         }
 
         public string Token
         {
             get => _config["DevChallengeApiSettings:Token"]!;
-            set => _config["DevChallengeApiSettings:Token"] = value;
+            set
+            {
+                _config["DevChallengeApiSettings:Token"] = value;
+                _apiUrl = BaseUrl + value;
+            }
         }
 
         public string Email
