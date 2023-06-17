@@ -7,14 +7,8 @@ namespace Challenge_DEV_2023.Models
 
         public static DevChallengeApiSettings Instance => instance.Value;
         private readonly IConfiguration _config;
-        public readonly string BaseUrl = "https://devchallenge.winsysgroup.com/";
-        private string _apiUrl;
+        public readonly string BaseUrl = "https://devchallenge.winsysgroup.com/api";
         private string _email;
-
-        public string ApiUrl
-        {
-            get => _apiUrl;
-        }
 
         public string Token
         {
@@ -22,7 +16,6 @@ namespace Challenge_DEV_2023.Models
             set
             {
                 _config["DevChallengeApiSettings:Token"] = value;
-                _apiUrl = BaseUrl + value;
             }
         }
 
@@ -35,10 +28,9 @@ namespace Challenge_DEV_2023.Models
         {
             // Initialize configuration
             _config = new ConfigurationBuilder()
-                .AddJsonFile("secrets.json")
+                .AddJsonFile("appsettings.json")
+                .AddUserSecrets<Program>(true)
                 .Build();
-            // Initialize other class variables
-            _apiUrl = BaseUrl;
             _email = _config["DevChallengeApiSettings:Email"]!;
         }
     }

@@ -3,9 +3,9 @@ using Challenge_DEV_2023.Controllers;
 
 namespace Challenge_DEV_2023.Models
 {
-	public class DAL
+	public class DevChallengeDal
 	{
-		public DAL()
+		public DevChallengeDal()
 		{
             string[] Check(string[] blocks, string token)
 			{
@@ -19,13 +19,6 @@ namespace Challenge_DEV_2023.Models
 				string tmp = array[index1];
 				array[index1] = array[index2];
 				array[index2] = tmp;
-			}
-
-			bool isSequent(string block1, string block2, string token)
-			{
-				BlocksController bc = new BlocksController();
-
-				return false;
 			}
 		}
 	}

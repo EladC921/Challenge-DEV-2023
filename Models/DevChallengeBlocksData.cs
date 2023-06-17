@@ -1,17 +1,15 @@
 ﻿using System;
+using System.Net.Http;
+
 namespace Challenge_DEV_2023.Models
 {
-	public class BlocksData
-	{
-        private string[] data;
-        private int chunkSize;
-        private int length;
+    public class DevChallengeBlocksData
+    {
+        public string[] Data { get; set; }
+        public int ChunkSize { get; set; }
+        public int Length { get; set; }
 
-        public string[] Data { get => data; set => data = value; }
-        public int ChunkSize { get => chunkSize; set => chunkSize = value; }
-        public int Length { get => length; set => length = value; }
-
-        public BlocksData(string[] data, int chunkSize, int length)
+        public DevChallengeBlocksData(string[] data, int chunkSize, int length)
         {
             Data = data;
             ChunkSize = chunkSize;
