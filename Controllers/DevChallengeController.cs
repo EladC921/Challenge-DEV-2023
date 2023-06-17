@@ -18,6 +18,7 @@ namespace Challenge_DEV_2023.Controllers
 
         [HttpPost("RetrieveToken")]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Post()
         {
             try
@@ -50,6 +51,26 @@ namespace Challenge_DEV_2023.Controllers
             catch(JsonException ex)
             {
                 return BadRequest("Invalid JSON format: " + ex.Message);
+            }
+            catch (HttpRequestException ex)
+            {
+                return StatusCode(500, "Error in HTTP request: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred: " + ex.Message);
+            }
+        }
+
+        [HttpPost("CheckBlocks")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Post(string block1, string block2)
+        {
+            try
+            {
+                bool result = await _apiService.CheckBlocks(block1, block2);
+                return Ok(result);
             }
             catch (HttpRequestException ex)
             {
