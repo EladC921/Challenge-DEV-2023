@@ -7,18 +7,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Initialize configuration
-var configuration = new ConfigurationBuilder()
-    .AddJsonFile("secrets.json")
-    .Build();
-
-// Access the api configuration section
-var apiSettings = configuration.GetSection("DevChallengeApiSettings");
-
-// Retrieve values from the secret manager
-var email = configuration["Email"];
-var apiToken = configuration["ApiToken"];
-
 // Register ApiSettings as a singleton
 builder.Services.AddSingleton<DevChallengeApiSettings>();
 
