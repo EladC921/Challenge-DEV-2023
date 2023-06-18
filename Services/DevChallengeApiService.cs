@@ -2,15 +2,18 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Challenge_DEV_2023.Services
 {
     public class DevChallengeApiService
     {
+        private string[] _blocks;
         private readonly HttpClient _httpClient;
 
         public DevChallengeApiService(HttpClient httpClient)
         {
+            _blocks = new string[0];
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
@@ -29,7 +32,7 @@ namespace Challenge_DEV_2023.Services
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
                 JsonDocument reponseData = JsonDocument.Parse(responseContent);
-                string token = reponseData.RootElement.GetProperty("token").GetString() ?? throw new ArgumentNullException("Token must contain a value.");
+                string token = reponseData.RootElement.GetProperty("token").GetString() ?? throw new JsonException("Missing or invalid 'token' property.");
                 return token;
             }
             else
@@ -44,26 +47,27 @@ namespace Challenge_DEV_2023.Services
         /// <returns>Blocks data</returns>
         /// <exception cref="JsonException"></exception>
         /// <exception cref="HttpRequestException"></exception>
-        public async Task<DevChallengeBlocksData> GetBlocksData()
+        public async Task<string[]> GetBlocksData()
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", DevChallengeApiSettings.Instance.Token);
             HttpResponseMessage response = await _httpClient.GetAsync($"{DevChallengeApiSettings.Instance.BaseUrl}/v1/blocks");
 
             if (response.IsSuccessStatusCode)
             {
-                string responseContent = await response.Content.ReadAsStringAsync();
-                DevChallengeBlocksData? responseData = JsonSerializer.Deserialize<DevChallengeBlocksData>(responseContent, new JsonSerializerOptions
+                var responseContent = await response.Content.ReadAsStringAsync();
+                JsonDocument jsonDocument = JsonDocument.Parse(responseContent);
+                // Check if "data" property exists and put its value into a variable
+                if (jsonDocument.RootElement.TryGetProperty("data", out JsonElement dataElement) && dataElement.ValueKind == JsonValueKind.Array)
                 {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                // Check if any required property is null and throw an exception
-                if (responseData?.Data == null || responseData.ChunkSize == 0 || responseData.Length == 0)
-                {
-                    throw new JsonException("Missing required properties.");
+                    _blocks = dataElement.EnumerateArray()
+                        .Select(element => element.GetString())
+                        .ToArray()!;
+                    return _blocks;
                 }
 
-                return responseData;
+                // else
+                throw new JsonException("Missing or invalid 'data' property.");
+
             }
             else
             {
@@ -75,9 +79,10 @@ namespace Challenge_DEV_2023.Services
         /// @@@POST - check either if two blocks are sequential or if the encoded final blocks order is correct
         /// </summary>
         /// <param name="requestData"></param>
-=        /// <exception cref="HttpRequestException"></exception>
+        /// <exception cref="HttpRequestException"></exception>
         private async Task<bool> SendCheckRequest(object requestData)
         {
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", DevChallengeApiSettings.Instance.Token);
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{DevChallengeApiSettings.Instance.BaseUrl}/v1/check", requestData);
             if (response.IsSuccessStatusCode)
             {
@@ -93,47 +98,71 @@ namespace Challenge_DEV_2023.Services
         }
 
 
+        /// <summary>
+        /// @@@Post - Check pair of blocks
+        /// </summary>
+        /// <param name="block1"></param>
+        /// <param name="block2"></param>
+        /// <returns>If pair of blocks are in sequent</returns>
         public async Task<bool> CheckBlocks(string block1, string block2)
         {
             var requestData = new { blocks = new string[] { block1, block2 } };
             return await SendCheckRequest(requestData);
         }
 
-        public async Task<bool> CheckEncodedBlocks(string[] blocks)
+        /// <summary>
+        /// @@@Post - Check encoded string
+        /// </summary>
+        /// <returns>If the encoded string is correct</returns>
+        public async Task<bool> CheckEncodedBlocks()
         {
-            var requestData = new { encoded = string.Join(",", blocks) };
+            var requestData = new { encode = string.Join("", await Check()) };
             return await SendCheckRequest(requestData);
         }
 
-        public async Task Check(DevChallengeBlocksData blocksData)
+        public async Task<string[]> Check()
         {
+            string[] sortedBlocks = (string[])_blocks.Clone();
             bool foundAnySequent = false;
             bool foundLastBlock = false;
-            for (int i = 0; i < blocksData.Length - 1; i++)
+            int blocksLenghToCheck = sortedBlocks.Length;
+            int lastBlockToCheckIndex = blocksLenghToCheck - 1;
+
+            for (int i = 0; i < blocksLenghToCheck - 1; i++)
             {
-                // if last block was found - skip on checking the 2 last blocks
-                if (foundLastBlock && i == blocksData.Length - 2) break;
-
-                string currentBlock = blocksData.Data[i];
-                for (int j = i + 1; j < blocksData.Length; j++)
+                string currentBlock = sortedBlocks[i];
+                for (int j = i + 1; j < blocksLenghToCheck; j++)
                 {
-                    string checkBlock = blocksData.Data[j];
-                    bool isSequential = await CheckBlocks(currentBlock, checkBlock);
-
-                    // put the sequential block after the current block
-                    if (isSequential)
+                    string checkBlock = sortedBlocks[j];
+                    // Check if every block is sequent to the current or to the last
+                    if (foundLastBlock)
                     {
-                        Swap(blocksData.Data, i + 1, j);
+                        string lastBlockToCheck = sortedBlocks[lastBlockToCheckIndex];
+                        if (await CheckBlocks(checkBlock, lastBlockToCheck))
+                        {
+                            Swap(sortedBlocks, j, lastBlockToCheckIndex - 1);
+                            // Update the current last block to check sequent
+                            lastBlockToCheckIndex--;
+                            blocksLenghToCheck--;
+                        }
+                    }
+                    // Put the sequential block after the current block
+                    if (await CheckBlocks(currentBlock, checkBlock))
+                    {
+                        Swap(sortedBlocks, i + 1, j);
                         foundAnySequent = true;
+                        break;
                     }
                 }
-                // if not found any sequent - put it as the last block, 'foundAnySequent' should be true from now on
+                // Get into this condition once -> put the last block in its place
                 if (!foundAnySequent)
                 {
-                    Swap(blocksData.Data, i, blocksData.Length - 1);
+                    Swap(sortedBlocks, i, blocksLenghToCheck - 1);
                     foundLastBlock = true;
                 }
             }
+
+            return sortedBlocks;
         }
 
         private void Swap<T>(T[] array, int index1, int index2)

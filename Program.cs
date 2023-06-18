@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Register ApiSettings as a singleton and ApiService as Scoped
 builder.Services.AddSingleton<DevChallengeApiSettings>();
-builder.Services.AddScoped(service => new DevChallengeApiService(new HttpClient()));
+builder.Services.AddSingleton(service => new DevChallengeApiService(new HttpClient()));
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

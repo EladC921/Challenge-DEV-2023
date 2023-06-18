@@ -19,13 +19,17 @@ namespace Challenge_DEV_2023.Controllers
         [HttpPost("RetrieveToken")]
         [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Post()
+        public async Task<IActionResult> RetrieveToken()
         {
             try
             {
                 string token = await _apiService.RetrieveTokenAsync();
                 DevChallengeApiSettings.Instance.Token = token;
                 return Ok();
+            }
+            catch (JsonException ex)
+            {
+                return BadRequest("Invalid JSON format: " + ex.Message);
             }
             catch (HttpRequestException ex)
             {
@@ -38,14 +42,14 @@ namespace Challenge_DEV_2023.Controllers
         }
 
         [HttpGet("GetBlocksData")]
-        [ProducesResponseType(typeof(DevChallengeBlocksData), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(string[]), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> GetBlocksData()
         {
             try
             {
-                DevChallengeBlocksData data = await _apiService.GetBlocksData();
+                string[] data = await _apiService.GetBlocksData();
                 return Ok(data);
             }
             catch(JsonException ex)
@@ -62,14 +66,14 @@ namespace Challenge_DEV_2023.Controllers
             }
         }
 
-        [HttpPost("CheckBlocks")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [HttpPost("Check")]
+        [ProducesResponseType(typeof(void), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Post(string block1, string block2)
+        public async Task<IActionResult> Check()
         {
             try
             {
-                bool result = await _apiService.CheckBlocks(block1, block2);
+                bool result = await _apiService.CheckEncodedBlocks();
                 return Ok(result);
             }
             catch (HttpRequestException ex)
