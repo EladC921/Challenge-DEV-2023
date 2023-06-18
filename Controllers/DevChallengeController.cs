@@ -24,7 +24,6 @@ namespace Challenge_DEV_2023.Controllers
             try
             {
                 string token = await _apiService.RetrieveTokenAsync();
-                DevChallengeApiSettings.Instance.Token = token;
                 return Ok();
             }
             catch (JsonException ex)

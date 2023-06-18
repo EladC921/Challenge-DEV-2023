@@ -11,6 +11,12 @@ namespace Challenge_DEV_2023.Services
         private string[] _blocks;
         private readonly HttpClient _httpClient;
 
+        public string[] Blocks
+        {
+            get { return _blocks; }
+            set { _blocks = value; }
+        }
+
         public DevChallengeApiService(HttpClient httpClient)
         {
             _blocks = new string[0];
@@ -33,6 +39,10 @@ namespace Challenge_DEV_2023.Services
                 var responseContent = await response.Content.ReadAsStringAsync();
                 JsonDocument reponseData = JsonDocument.Parse(responseContent);
                 string token = reponseData.RootElement.GetProperty("token").GetString() ?? throw new JsonException("Missing or invalid 'token' property.");
+                // Save token in secrets.json
+                DevChallengeApiSettings.Instance.Token = token;
+                // Authorize once since this service is a singleton
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", DevChallengeApiSettings.Instance.Token);
                 return token;
             }
             else
@@ -49,7 +59,6 @@ namespace Challenge_DEV_2023.Services
         /// <exception cref="HttpRequestException"></exception>
         public async Task<string[]> GetBlocksData()
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", DevChallengeApiSettings.Instance.Token);
             HttpResponseMessage response = await _httpClient.GetAsync($"{DevChallengeApiSettings.Instance.BaseUrl}/v1/blocks");
 
             if (response.IsSuccessStatusCode)
@@ -82,7 +91,6 @@ namespace Challenge_DEV_2023.Services
         /// <exception cref="HttpRequestException"></exception>
         private async Task<bool> SendCheckRequest(object requestData)
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", DevChallengeApiSettings.Instance.Token);
             HttpResponseMessage response = await _httpClient.PostAsJsonAsync($"{DevChallengeApiSettings.Instance.BaseUrl}/v1/check", requestData);
             if (response.IsSuccessStatusCode)
             {
@@ -104,7 +112,7 @@ namespace Challenge_DEV_2023.Services
         /// <param name="block1"></param>
         /// <param name="block2"></param>
         /// <returns>If pair of blocks are in sequent</returns>
-        public async Task<bool> CheckBlocks(string block1, string block2)
+        public virtual async Task<bool> CheckBlocks(string block1, string block2)
         {
             var requestData = new { blocks = new string[] { block1, block2 } };
             return await SendCheckRequest(requestData);
@@ -114,7 +122,7 @@ namespace Challenge_DEV_2023.Services
         /// @@@Post - Check encoded string
         /// </summary>
         /// <returns>If the encoded string is correct</returns>
-        public async Task<bool> CheckEncodedBlocks()
+        public virtual async Task<bool> CheckEncodedBlocks()
         {
             var requestData = new { encode = string.Join("", await Check()) };
             return await SendCheckRequest(requestData);
@@ -123,42 +131,20 @@ namespace Challenge_DEV_2023.Services
         public async Task<string[]> Check()
         {
             string[] sortedBlocks = (string[])_blocks.Clone();
-            bool foundAnySequent = false;
-            bool foundLastBlock = false;
-            int blocksLenghToCheck = sortedBlocks.Length;
-            int lastBlockToCheckIndex = blocksLenghToCheck - 1;
+            int sortedBlocksLength = sortedBlocks.Length;
 
-            for (int i = 0; i < blocksLenghToCheck - 1; i++)
+            for (int i = 0; i < sortedBlocksLength - 1; i++)
             {
                 string currentBlock = sortedBlocks[i];
-                for (int j = i + 1; j < blocksLenghToCheck; j++)
+                for (int j = i + 1; j < sortedBlocksLength; j++)
                 {
                     string checkBlock = sortedBlocks[j];
-                    // Check if every block is sequent to the current or to the last
-                    if (foundLastBlock)
-                    {
-                        string lastBlockToCheck = sortedBlocks[lastBlockToCheckIndex];
-                        if (await CheckBlocks(checkBlock, lastBlockToCheck))
-                        {
-                            Swap(sortedBlocks, j, lastBlockToCheckIndex - 1);
-                            // Update the current last block to check sequent
-                            lastBlockToCheckIndex--;
-                            blocksLenghToCheck--;
-                        }
-                    }
                     // Put the sequential block after the current block
                     if (await CheckBlocks(currentBlock, checkBlock))
                     {
                         Swap(sortedBlocks, i + 1, j);
-                        foundAnySequent = true;
                         break;
                     }
-                }
-                // Get into this condition once -> put the last block in its place
-                if (!foundAnySequent)
-                {
-                    Swap(sortedBlocks, i, blocksLenghToCheck - 1);
-                    foundLastBlock = true;
                 }
             }
 
