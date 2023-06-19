@@ -32,7 +32,7 @@ OR - (add manually)
 Run
 ```dotnet test```
 
-* Note - the first test will trigger actual api calls. The second test uses a mock to simulate the calls. *
+* Note - the first test will trigger actual api calls. The second test uses a mock to simulate the calls.
 
 OR - run manually from your IDE
 
