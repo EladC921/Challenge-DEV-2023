@@ -48,7 +48,7 @@ namespace Challenge_DEV_2023.Controllers
         {
             try
             {
-                string[] data = await _apiService.GetBlocksData();
+                string[] data = await _apiService.GetBlocksDataAsync();
                 return Ok(data);
             }
             catch(JsonException ex)
@@ -72,7 +72,7 @@ namespace Challenge_DEV_2023.Controllers
         {
             try
             {
-                bool result = await _apiService.CheckEncodedBlocks();
+                bool result = await _apiService.CheckEncodedBlocksAsync();
                 return Ok(result);
             }
             catch (HttpRequestException ex)

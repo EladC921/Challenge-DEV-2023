@@ -1,8 +1,6 @@
 ﻿using Challenge_DEV_2023.Models;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace Challenge_DEV_2023.Services
 {
@@ -57,8 +55,13 @@ namespace Challenge_DEV_2023.Services
         /// <returns>Blocks data</returns>
         /// <exception cref="JsonException"></exception>
         /// <exception cref="HttpRequestException"></exception>
-        public async Task<string[]> GetBlocksData()
+        public async Task<string[]> GetBlocksDataAsync()
         {
+            if (DevChallengeApiSettings.Instance.Token == string.Empty)
+            {
+                await RetrieveTokenAsync();
+            }
+
             HttpResponseMessage response = await _httpClient.GetAsync($"{DevChallengeApiSettings.Instance.BaseUrl}/v1/blocks");
 
             if (response.IsSuccessStatusCode)
@@ -112,8 +115,17 @@ namespace Challenge_DEV_2023.Services
         /// <param name="block1"></param>
         /// <param name="block2"></param>
         /// <returns>If pair of blocks are in sequent</returns>
-        public virtual async Task<bool> CheckBlocks(string block1, string block2)
+        public virtual async Task<bool> CheckBlocksAsync(string block1, string block2)
         {
+            if (DevChallengeApiSettings.Instance.Token == string.Empty)
+            {
+                await RetrieveTokenAsync();
+            }
+            if (_blocks.Length == 0)
+            {
+                await GetBlocksDataAsync();
+            }
+
             var requestData = new { blocks = new string[] { block1, block2 } };
             return await SendCheckRequest(requestData);
         }
@@ -122,14 +134,25 @@ namespace Challenge_DEV_2023.Services
         /// @@@Post - Check encoded string
         /// </summary>
         /// <returns>If the encoded string is correct</returns>
-        public virtual async Task<bool> CheckEncodedBlocks()
+        public virtual async Task<bool> CheckEncodedBlocksAsync()
         {
+            if (DevChallengeApiSettings.Instance.Token == string.Empty)
+            {
+                await RetrieveTokenAsync();
+            }
+            if (_blocks.Length == 0)
+            {
+                await GetBlocksDataAsync();
+            }
+
             var requestData = new { encode = string.Join("", await Check()) };
             return await SendCheckRequest(requestData);
         }
 
         public async Task<string[]> Check()
         {
+            if (_blocks.Length == 0) throw new ArgumentNullException("Invlaid action: Blocks data must be retrieved before applying this method.");
+
             string[] sortedBlocks = (string[])_blocks.Clone();
             int sortedBlocksLength = sortedBlocks.Length;
 
@@ -140,7 +163,7 @@ namespace Challenge_DEV_2023.Services
                 {
                     string checkBlock = sortedBlocks[j];
                     // Put the sequential block after the current block
-                    if (await CheckBlocks(currentBlock, checkBlock))
+                    if (await CheckBlocksAsync(currentBlock, checkBlock))
                     {
                         Swap(sortedBlocks, i + 1, j);
                         break;
