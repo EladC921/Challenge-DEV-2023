@@ -3,18 +3,28 @@
 ## Prerequisites
 
 Run 
-```dotnet restore```
+```
+dotnet restore
+```
 
 OR - (add manually)
 
 - Microsoft.NET.Test.Sdk
-```dotnet add package Microsoft.NET.Test.Sdk```
+```
+dotnet add package Microsoft.NET.Test.Sdk
+```
 - MOQ
-```dotnet add package Moq```
+```
+dotnet add package Moq
+```
 - NUnit
-```dotnet add package NUnit```
+```
+dotnet add package NUnit
+```
 - NUnit3TestAdapter
-```dotnet add package NUnit3TestAdapter```
+```
+dotnet add package NUnit3TestAdapter
+```
 
 ## Getting Started
 
@@ -30,7 +40,9 @@ OR - (add manually)
 ## Test
 
 Run
-```dotnet test```
+```
+dotnet test
+```
 
 * Note - the first test will trigger actual api calls. The second test uses a mock to simulate the calls.
 
