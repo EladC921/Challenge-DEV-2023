@@ -96,7 +96,7 @@ namespace Challenge_DEV_2023.Tests
                 .ReturnsAsync(new HttpResponseMessage
                 {
                     StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent("{\"data\": [\"A\",\"B\",\"D\",\"E\",\"C\"]}"),
+                    Content = new StringContent("{\"data\": [\"A\",\"E\",\"D\",\"C\",\"B\"]}"),
                 });
 
             // for CheckEncodedBlocks and CheckBlocks

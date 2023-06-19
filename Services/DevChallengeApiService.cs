@@ -155,6 +155,7 @@ namespace Challenge_DEV_2023.Services
 
             string[] sortedBlocks = (string[])_blocks.Clone();
             int sortedBlocksLength = sortedBlocks.Length;
+            bool foundAnySequent = false;
 
             for (int i = 0; i < sortedBlocksLength - 1; i++)
             {
@@ -166,8 +167,15 @@ namespace Challenge_DEV_2023.Services
                     if (await CheckBlocksAsync(currentBlock, checkBlock))
                     {
                         Swap(sortedBlocks, i + 1, j);
+                        foundAnySequent = true;
                         break;
                     }
+                }
+                // Put the last block in its place
+                if (!foundAnySequent)
+                {
+                    Swap(sortedBlocks, i, sortedBlocksLength - 1);
+                    sortedBlocksLength--; // No need to check the last block
                 }
             }
 
